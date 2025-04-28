@@ -1,51 +1,41 @@
-name: Validate PR with Ticket
-on:
-  pull_request:
-    types: [opened, reopened, synchronize, edited]
-jobs:
-  validate-pr:
-    runs-on: ubuntu-latest
+import os
 
-    permissions:
-      pull-requests: write
-      issues: write
-      contents: read
+def validate_branch_and_pr_title(branch, pr_title):
+    """
+    Validates if the branch name and PR title follow the 'TAIN-' pattern.
+    Args:
+        branch (str): The name of the branch to validate.
+        pr_title (str): The title of the pull request (PR) to validate.
+    Returns:
+        bool: True if both the branch and the pull request follow the 'TAIN-' pattern, False otherwise.
+    Prints:
+        str: A message indicating whether the branch and PR title are valid or specifying the validation error.
+    """
 
-    steps:
-    - name: Checkout repository
-      uses: actions/checkout@v3
+    # Verify if the branch starts with 'TADocs-'
+    if not branch.startswith("TAIN-"):
+        print(f"The branch '{branch}' does not start with the pattern 'TAIN-'.")
+        return False
+    # Verify if the branch contains with 'TADocs-'
+    if "TAIN-" not in pr_title:
+        print(f"The PR title '{pr_title}' does not contain the pattern 'TAIN-'.")
+        return False
+    
+    print(f"Validation successful: The branch '{branch}' and the PR title '{pr_title}' follow the 'TAIN-' pattern.")
 
-    - name: Set up Python
-      uses: actions/setup-python@v4
-      with:
-        python-version: '3.x'
+    return True
 
-    - name: Validate PR ticket link
-      id: validate_pr
-      env:
-        GITHUB_HEAD_REF: ${{ github.head_ref }}  # Branch name
-        PR_TITLE: ${{ github.event.pull_request.title }}  # PR Title
-      run: |
-        if ! python scripts/validate_pr.py; then
-          echo "validation_failed=true" >> $GITHUB_OUTPUT
-        fi
+if __name__ == "__main__":
+    PR_BRANCH = os.getenv("GITHUB_HEAD_REF")
+    PR_TITLE = os.getenv("PR_TITLE")
+    
+    if not PR_BRANCH:
+        raise ValueError("The environment variable GITHUB_HEAD_REF is not defined.")
+    if not PR_TITLE:
+        raise ValueError("The environment variable PR_TITLE is not defined.")
+    
+    print(f"Captured PR branch: {PR_BRANCH}")
+    print(f"Captured PR title: {PR_TITLE}")
 
-    - name: Notify user and fail job if validation fails
-      if: steps.validate_pr.outputs.validation_failed == 'true'
-      uses: actions/github-script@v6
-      with:
-        script: |
-          // Add a comment to the PR
-          const { data: comment } = await github.rest.issues.createComment({
-            owner: context.repo.owner,
-            repo: context.repo.repo,
-            issue_number: context.issue.number,
-            body: "**Validation Failed!** \n\n" +
-          "The branch name and PR title must follow the `TAIN-` pattern.\n" +
-          "- Ensure the branch name starts with `TAIN-`.\n" +
-          "- Ensure the PR title contains `TAIN-`.\n\n" +
-          "Please adjust and try again. Thank you!"
-          });
-          console.log(`Comment added: ${comment.html_url}`);
-          // Fail the job manually
-          throw new Error("Validation failed. Check the comment on the PR for more details.");
+    if not validate_branch_and_pr_title(PR_BRANCH, PR_TITLE):
+        exit(1)
