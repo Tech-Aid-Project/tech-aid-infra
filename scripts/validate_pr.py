@@ -12,11 +12,11 @@ def validate_branch_and_pr_title(branch, pr_title):
         str: A message indicating whether the branch and PR title are valid or specifying the validation error.
     """
 
-    # Verify if the branch starts with 'TADocs-'
+    # Verify if the branch starts with 'TAIN-'
     if not branch.startswith("TAIN-"):
         print(f"The branch '{branch}' does not start with the pattern 'TAIN-'.")
         return False
-    # Verify if the branch contains with 'TADocs-'
+    # Verify if the branch contains with 'TAIN-'
     if "TAIN-" not in pr_title:
         print(f"The PR title '{pr_title}' does not contain the pattern 'TAIN-'.")
         return False
